@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - MarketFollowers</title>
+    <!-- Tailwind CSS para un diseño moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .modal-backdrop { transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease; }
+        .nav-item.active {
+            background-color: #ef4444; /* red-500 */
+            color: white;
+        }
+        .nav-item {
+            transition: background-color 0.2s ease-in-out;
+        }
+        .api-error {
+            border: 2px solid #ef4444 !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <div class="flex h-screen">
+        <!-- Menú de Navegación Lateral -->
+        <aside class="w-64 bg-gray-800 p-4 flex flex-col">
+            <h1 class="text-2xl font-bold text-center mb-8">MarketFollowers</h1>
+            <nav class="flex flex-col gap-2">
+                <button data-page="nueva-orden" class="nav-item active text-left flex items-center gap-3 px-4 py-3 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                    <span>Nueva Orden</span>
+                </button>
+                <button data-page="agregar-fondos" class="nav-item text-left flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
+                    <span>Agregar Fondos</span>
+                </button>
+                 <button data-page="servicios" class="nav-item text-left flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                    <span>Servicios</span>
+                </button>
+                <button data-page="ordenes" class="nav-item text-left flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+                    <span>Órdenes</span>
+                </button>
+                <button data-page="api" class="nav-item text-left flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                    <span>API</span>
+                </button>
+                <button data-page="afiliados" class="nav-item text-left flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <span>Afiliados</span>
+                </button>
+                <button data-page="arrendar" class="nav-item text-left flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    <span>Arrendar Panel</span>
+                </button>
+                 <button data-page="tickets" class="nav-item text-left flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 2.8A2 2 0 0 0 14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.5c0-.8-.4-1.5-1-2Z"></path><path d="M12 15v-2"></path><path d="M12 9h.01"></path></svg>
+                    <span>Tickets</span>
+                </button>
+                <button data-page="actualizaciones" class="nav-item text-left flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    <span>Actualizaciones</span>
+                </button>
+            </nav>
+            <div class="mt-auto">
+                <div class="bg-gray-700 p-3 rounded-lg">
+                    <h3 class="text-sm font-semibold mb-2">Saldo Actual</h3>
+                    <div id="balance-display" class="text-xl font-bold text-green-400">--.--</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Contenido Principal -->
+        <main class="flex-1 p-8 overflow-y-auto bg-gray-900">
+            <!-- Video Principal -->
+            <div class="mb-8">
+                <div class="aspect-w-16 aspect-h-9 bg-black rounded-lg">
+                    <iframe class="w-full h-full rounded-lg" src="https://www.youtube.com/embed/uSTnyv9Ga_U?si=kzCul-p4-10daue7" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                </div>
+            </div>
+
+            <div id="content-container">
+                <!-- Página: Nueva Orden -->
+                <div id="page-nueva-orden" class="page-content">
+                    <h2 class="text-3xl font-bold mb-6">Nueva Orden</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="bg-gray-800 p-6 rounded-xl">
+                             <form id="order-form" class="space-y-4">
+                                <div>
+                                    <label for="service-search" class="block text-sm font-medium text-gray-400 mb-1">Buscar Servicio</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="text" id="service-search" placeholder="Escribe para buscar (ej: 'Instagram')" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
+                                        <button type="button" id="cheapest-btn" title="Seleccionar el servicio más barato de toda la lista" class="bg-amber-500 hover:bg-amber-600 text-white font-bold p-2 rounded-lg transition duration-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="service" class="block text-sm font-medium text-gray-400 mb-1">Servicio</label>
+                                    <select id="service" name="service" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
+                                        <option>Cargando servicios...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="link" class="block text-sm font-medium text-gray-400 mb-1">Enlace</label>
+                                    <input type="text" id="link" name="link" placeholder="https://www.instagram.com/usuario" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
+                                </div>
+                                <div>
+                                    <label for="quantity" class="block text-sm font-medium text-gray-400 mb-1">Cantidad</label>
+                                    <input type="number" id="quantity" name="quantity" placeholder="1000" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
+                                </div>
+                                
+                                <div class="mt-2 pt-4 border-t border-gray-700 text-right">
+                                    <span class="text-sm font-medium text-gray-400">Total a gastar:</span>
+                                    <span id="total-cost" class="text-lg font-bold text-green-400">$0.00</span>
+                                </div>
+
+                                <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                                    <span id="order-btn-text">Realizar Pedido</span>
+                                    <div id="order-loader" class="loader hidden ml-2"></div>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="bg-gray-800 p-6 rounded-xl">
+                            <h3 class="text-xl font-bold text-gray-200 mb-4">Respuesta de la API</h3>
+                            <div id="api-response-container" class="bg-black rounded-lg p-4 h-full overflow-auto">
+                                <pre id="api-response" class="text-sm text-green-300 whitespace-pre-wrap break-words">Esperando una acción...</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Página: Agregar Fondos -->
+                <div id="page-agregar-fondos" class="page-content hidden">
+                     <h2 class="text-3xl font-bold mb-6">Agregar Fondos</h2>
+                     <div class="max-w-md bg-gray-800 p-6 rounded-xl">
+                        <form id="add-balance-form" class="space-y-4">
+                            <p class="text-gray-400">Esta es una simulación. Ingrese un monto para agregarlo visualmente a su saldo.</p>
+                            <div>
+                                <label for="balance-amount" class="block text-sm font-medium text-gray-400 mb-1">Monto a Cargar (USD)</label>
+                                <input type="number" id="balance-amount" name="balance-amount" placeholder="20.50" step="0.01" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                            </div>
+                            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                                <span>Continuar al Pago</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Página: Servicios -->
+                <div id="page-servicios" class="page-content hidden">
+                    <h2 class="text-3xl font-bold mb-6">Lista de Servicios</h2>
+                    <div class="bg-gray-800 p-6 rounded-xl">
+                        <div class="max-h-[70vh] overflow-y-auto">
+                            <table class="w-full text-left">
+                                <thead class="sticky top-0 bg-gray-800">
+                                    <tr>
+                                        <th class="p-2 border-b border-gray-700">ID</th>
+                                        <th class="p-2 border-b border-gray-700">Nombre</th>
+                                        <th class="p-2 border-b border-gray-700">Tarifa / 1k</th>
+                                        <th class="p-2 border-b border-gray-700">Min/Max</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="services-table-body">
+                                    <!-- Los servicios se cargarán aquí -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Página: Órdenes -->
+                <div id="page-ordenes" class="page-content hidden">
+                    <h2 class="text-3xl font-bold mb-6">Verificar Estado de Pedido</h2>
+                    <div class="max-w-md bg-gray-800 p-6 rounded-xl">
+                        <form id="status-form" class="space-y-4">
+                            <div>
+                                <label for="order-id" class="block text-sm font-medium text-gray-400 mb-1">ID del Pedido</label>
+                                <input type="text" id="order-id" name="order-id" placeholder="12345" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                            </div>
+                            <button type="submit" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                                <span id="status-btn-text">Verificar Estado</span>
+                                <div id="status-loader" class="loader hidden ml-2"></div>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Página: API -->
+                <div id="page-api" class="page-content hidden">
+                    <h2 class="text-3xl font-bold mb-6">Configuración de API</h2>
+                    <div class="max-w-md bg-gray-800 p-6 rounded-xl">
+                        <form id="api-key-form" class="space-y-4">
+                            <div>
+                                <label for="api-key-input" class="block text-sm font-medium text-gray-400 mb-1">Tu API Key</label>
+                                <input type="password" id="api-key-input" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
+                            </div>
+                            <button type="submit" id="save-api-key-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Guardar API Key</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Páginas Placeholder -->
+                <div id="page-afiliados" class="page-content hidden text-center pt-20">
+                    <h2 class="text-4xl font-bold text-gray-500">Próximamente</h2>
+                    <p class="text-gray-600 mt-2">La sección de Afiliados estará disponible pronto.</p>
+                </div>
+                <div id="page-arrendar" class="page-content hidden text-center pt-20">
+                    <h2 class="text-4xl font-bold text-gray-500">Próximamente</h2>
+                    <p class="text-gray-600 mt-2">La sección para Arrendar Panel estará disponible pronto.</p>
+                </div>
+                 <div id="page-tickets" class="page-content hidden text-center pt-20">
+                    <h2 class="text-4xl font-bold text-gray-500">Próximamente</h2>
+                    <p class="text-gray-600 mt-2">La sección de Tickets de Soporte estará disponible pronto.</p>
+                </div>
+                <div id="page-actualizaciones" class="page-content hidden text-center pt-20">
+                    <h2 class="text-4xl font-bold text-gray-500">Próximamente</h2>
+                    <p class="text-gray-600 mt-2">La sección de Actualizaciones estará disponible pronto.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL DE PAGO CON TARJETA -->
+    <div id="payment-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div id="payment-modal-backdrop" class="absolute inset-0 bg-black bg-opacity-50 modal-backdrop"></div>
+        <div class="bg-gray-800 text-white rounded-xl shadow-2xl p-6 md:p-8 w-full max-w-md z-10 mx-4 modal-content transform scale-95">
+            <h2 class="text-2xl font-bold mb-6">Detalles de Pago</h2>
+            <form id="payment-form">
+                <div class="space-y-4">
+                    <div>
+                        <label for="card-name" class="block text-sm font-medium text-gray-400">Nombre en la Tarjeta</label>
+                        <input type="text" id="card-name" placeholder="Juan Pérez" class="mt-1 w-full p-2 border border-gray-600 bg-gray-700 rounded-lg" required>
+                    </div>
+                    <div>
+                        <label for="card-number" class="block text-sm font-medium text-gray-400">Número de Tarjeta</label>
+                        <input type="text" id="card-number" placeholder="0000 0000 0000 0000" class="mt-1 w-full p-2 border border-gray-600 bg-gray-700 rounded-lg" required>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-1">
+                            <label for="card-expiry" class="block text-sm font-medium text-gray-400">Vencimiento</label>
+                            <input type="text" id="card-expiry" placeholder="MM/AA" class="mt-1 w-full p-2 border border-gray-600 bg-gray-700 rounded-lg" required>
+                        </div>
+                        <div class="flex-1">
+                            <label for="card-cvc" class="block text-sm font-medium text-gray-400">CVC</label>
+                            <input type="text" id="card-cvc" placeholder="123" class="mt-1 w-full p-2 border border-gray-600 bg-gray-700 rounded-lg" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-8 flex justify-end gap-4">
+                    <button type="button" id="cancel-payment-btn" class="px-4 py-2 bg-gray-600 rounded-lg hover:bg-gray-500">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Pagar <span id="payment-amount-text"></span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMACIÓN -->
+    <div id="confirmation-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50 modal-backdrop"></div>
+        <div class="bg-gray-800 text-white rounded-xl shadow-2xl p-6 md:p-8 w-full max-w-sm z-10 mx-4 text-center modal-content">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-900 mb-4">
+                <svg class="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <h3 class="text-lg leading-6 font-medium">¡Pago Exitoso!</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-400">
+                    La carga de saldo se ha procesado correctamente. Se enviará un email con la confirmación.
+                </p>
+            </div>
+            <div class="mt-4">
+                <button id="close-confirmation-btn" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700">
+                    Aceptar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Configuración de la API ---
+            let apiKey = localStorage.getItem('marketFollowersApiKey') || '817eb753c98220d9c2c2251468340073';
+            const originalApiUrl = 'https://marketfollowers.com/api/v2';
+            const proxyUrl = 'https://corsproxy.io/?';
+            const apiUrl = proxyUrl + encodeURIComponent(originalApiUrl);
+
+            // --- Almacén de datos ---
+            let allServices = []; 
+
+            // --- Elementos del DOM ---
+            const apiKeyForm = document.getElementById('api-key-form');
+            const apiKeyInput = document.getElementById('api-key-input');
+            const balanceDisplay = document.getElementById('balance-display');
+            const serviceSearchInput = document.getElementById('service-search');
+            const serviceSelect = document.getElementById('service');
+            const orderForm = document.getElementById('order-form');
+            const statusForm = document.getElementById('status-form');
+            const apiResponse = document.getElementById('api-response');
+            const apiResponseContainer = document.getElementById('api-response-container');
+            const quantityInput = document.getElementById('quantity');
+            const totalCostDisplay = document.getElementById('total-cost');
+            const cheapestBtn = document.getElementById('cheapest-btn');
+            const linkInput = document.getElementById('link');
+            const addBalanceForm = document.getElementById('add-balance-form'); 
+            const balanceAmountInput = document.getElementById('balance-amount');
+            const servicesTableBody = document.getElementById('services-table-body');
+            
+            // --- Elementos de Carga (Spinners) ---
+            const orderLoader = document.getElementById('order-loader');
+            const statusLoader = document.getElementById('status-loader');
+
+            // --- Elementos del Modal ---
+            const paymentModal = document.getElementById('payment-modal');
+            const paymentForm = document.getElementById('payment-form');
+            const cancelPaymentBtn = document.getElementById('cancel-payment-btn');
+            const paymentAmountText = document.getElementById('payment-amount-text');
+            const confirmationModal = document.getElementById('confirmation-modal');
+            const closeConfirmationBtn = document.getElementById('close-confirmation-btn');
+            
+            // --- Navegación ---
+            const navItems = document.querySelectorAll('.nav-item');
+            const contentPages = document.querySelectorAll('.page-content');
+
+            /**
+             * Función genérica para hacer peticiones a la API.
+             */
+            async function fetchApi(data, loader, buttonTextEl) {
+                if(loader) loader.classList.remove('hidden');
+                if(buttonTextEl) buttonTextEl.style.display = 'none';
+                
+                data.key = apiKey;
+                apiResponse.textContent = 'Procesando...';
+                apiResponse.classList.remove('text-red-400');
+                apiResponse.classList.add('text-green-300');
+                apiResponseContainer.classList.remove('api-error');
+
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams(data)
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                             throw new Error(`Error 401: No Autorizado. La API Key es incorrecta o inválida. Por favor, ingrese una clave válida en la sección 'API'.`);
+                        }
+                        throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    if(result.error) {
+                        throw new Error(result.error);
+                    }
+
+                    if (data.action !== 'services') { 
+                      apiResponse.textContent = JSON.stringify(result, null, 2);
+                    }
+                    return result;
+
+                } catch (error) {
+                    console.error('Error en la petición a la API:', error);
+                    apiResponse.textContent = `Error: ${error.message}`;
+                    apiResponse.classList.add('text-red-400');
+                    apiResponse.classList.remove('text-green-300');
+                    apiResponseContainer.classList.add('api-error');
+                    return null;
+                } finally {
+                    if(loader) loader.classList.add('hidden');
+                    if(buttonTextEl) buttonTextEl.style.display = 'inline';
+                }
+            }
+            
+            function updateTotalCost() {
+                const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+                if (!selectedOption || !selectedOption.dataset.rate) {
+                    totalCostDisplay.textContent = '$0.00';
+                    return;
+                }
+                const rate = parseFloat(selectedOption.dataset.rate);
+                const quantity = parseInt(quantityInput.value, 10);
+                if (rate && quantity > 0) {
+                    const total = (rate / 1000) * quantity;
+                    totalCostDisplay.textContent = `$${total.toFixed(4)}`;
+                } else {
+                    totalCostDisplay.textContent = '$0.00';
+                }
+            }
+
+            async function getBalance() {
+                const data = { action: 'balance' };
+                const result = await fetchApi(data);
+                if (result && result.balance && result.currency) {
+                    balanceDisplay.textContent = `${result.balance} ${result.currency}`;
+                } else {
+                    balanceDisplay.textContent = 'Error';
+                }
+            }
+            
+            function renderServices(servicesToRender) {
+                serviceSelect.innerHTML = ''; 
+                if (servicesToRender.length === 0) {
+                    serviceSelect.innerHTML = '<option value="">No se encontraron servicios</option>';
+                    return;
+                }
+                
+                serviceSelect.innerHTML = '<option value="">-- Selecciona un servicio --</option>';
+                servicesToRender.forEach(service => {
+                    const option = document.createElement('option');
+                    option.value = service.service;
+                    option.textContent = `[${service.service}] ${service.name} - ${service.rate} ${service.currency || 'USD'}/1k`;
+                    option.dataset.rate = service.rate; 
+                    serviceSelect.appendChild(option);
+                });
+            }
+
+            function populateServicesTable(services) {
+                servicesTableBody.innerHTML = '';
+                if (!services || !Array.isArray(services)) {
+                    servicesTableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">No se pudieron cargar los servicios.</td></tr>';
+                    return;
+                }
+                services.forEach(service => {
+                    const row = `
+                        <tr class="hover:bg-gray-700">
+                            <td class="p-2 border-b border-gray-700">${service.service}</td>
+                            <td class="p-2 border-b border-gray-700">${service.name}</td>
+                            <td class="p-2 border-b border-gray-700">${service.rate}</td>
+                            <td class="p-2 border-b border-gray-700">${service.min} / ${service.max}</td>
+                        </tr>
+                    `;
+                    servicesTableBody.innerHTML += row;
+                });
+            }
+
+            function setExampleService() {
+                if (!allServices || allServices.length === 0) return;
+                const exampleServiceId = '171';
+                const exampleService = allServices.find(s => s.service === exampleServiceId);
+
+                if (exampleService) {
+                    serviceSelect.value = exampleServiceId;
+                    quantityInput.value = 1000; 
+                    linkInput.value = 'https://www.instagram.com/p/CXYZ123/'; 
+                    serviceSelect.dispatchEvent(new Event('change'));
+                }
+            }
+
+            async function getServices() {
+                const data = { action: 'services' };
+                const services = await fetchApi(data);
+                
+                if (services && Array.isArray(services)) {
+                    allServices = services; 
+                    renderServices(allServices); 
+                    populateServicesTable(allServices);
+                    apiResponse.textContent = `Se cargaron ${allServices.length} servicios.`;
+                    setExampleService(); 
+                } else {
+                    serviceSelect.innerHTML = '<option>Error al cargar servicios</option>';
+                    populateServicesTable([]);
+                }
+            }
+
+            function handleServiceSearch() {
+                const searchTerm = serviceSearchInput.value.toLowerCase();
+                const filteredServices = allServices.filter(service => {
+                    const serviceText = `[${service.service}] ${service.name}`.toLowerCase();
+                    return serviceText.includes(searchTerm);
+                });
+                renderServices(filteredServices);
+                updateTotalCost();
+            }
+
+            function selectCheapestService() {
+                if (!allServices || allServices.length === 0) {
+                    apiResponse.textContent = 'La lista de servicios aún no se ha cargado.';
+                    return;
+                }
+
+                if (serviceSearchInput.value !== '') {
+                    serviceSearchInput.value = '';
+                    renderServices(allServices);
+                }
+
+                const cheapestService = allServices.reduce((prev, current) => {
+                    return (parseFloat(prev.rate) < parseFloat(current.rate)) ? prev : current;
+                });
+
+                if (cheapestService) {
+                    serviceSelect.value = cheapestService.service;
+                    serviceSelect.dispatchEvent(new Event('change'));
+                    apiResponse.textContent = `Servicio más barato seleccionado:\n[${cheapestService.service}] ${cheapestService.name}\nTarifa: ${cheapestService.rate}`;
+                }
+            }
+
+            function processBalanceLoad() {
+                const amountToAdd = parseFloat(balanceAmountInput.value);
+                const currentBalanceText = balanceDisplay.textContent;
+                const currentBalance = parseFloat(currentBalanceText.split(' ')[0]);
+                const currency = currentBalanceText.split(' ')[1] || 'USD';
+                
+                if (isNaN(currentBalance)) {
+                     apiResponse.textContent = 'No se pudo leer el saldo actual. Por favor, espere a que se cargue.';
+                     return;
+                }
+
+                const newBalance = currentBalance + amountToAdd;
+
+                balanceDisplay.textContent = `${newBalance.toFixed(4)} ${currency}`;
+                
+                apiResponse.textContent = JSON.stringify({
+                    "status": "OK (Simulación)",
+                    "message": `Se cargaron ${amountToAdd.toFixed(2)} ${currency} al saldo localmente.`,
+                    "new_balance_simulated": newBalance.toFixed(4),
+                    "note": "Esto es solo una simulación visual. La API no permite agregar fondos. Al actualizar, se mostrará el saldo real."
+                }, null, 2);
+
+                addBalanceForm.reset();
+            }
+
+            async function handlePlaceOrder(e) {
+                e.preventDefault();
+                const service = serviceSelect.value;
+                const link = linkInput.value;
+                const quantity = quantityInput.value;
+
+                if (!service || !link || !quantity) {
+                    apiResponse.textContent = 'Por favor, completa todos los campos para realizar un pedido.';
+                    return;
+                }
+
+                const data = {
+                    action: 'add',
+                    service: service,
+                    link: link,
+                    quantity: quantity
+                };
+                
+                const result = await fetchApi(data, orderLoader, document.getElementById('order-btn-text'));
+                if (result && result.order) {
+                    getBalance(); 
+                }
+            }
+            
+            async function handleCheckStatus(e) {
+                e.preventDefault();
+                const orderId = document.getElementById('order-id').value;
+
+                if (!orderId) {
+                    apiResponse.textContent = 'Por favor, introduce un ID de pedido.';
+                    return;
+                }
+
+                const data = {
+                    action: 'status',
+                    order: orderId
+                };
+
+                await fetchApi(data, statusLoader, document.getElementById('status-btn-text'));
+            }
+            
+            function handleSaveApiKey(e) {
+                e.preventDefault();
+                const newApiKey = apiKeyInput.value.trim();
+                if (newApiKey) {
+                    apiKey = newApiKey;
+                    localStorage.setItem('marketFollowersApiKey', newApiKey);
+                    apiResponse.textContent = 'API Key guardada. Actualizando datos...';
+                    getBalance();
+                    getServices();
+                } else {
+                    apiResponse.textContent = 'La API Key no puede estar vacía.';
+                }
+            }
+
+            // --- Lógica de Modales ---
+            function openModal(modal) {
+                modal.classList.remove('hidden');
+                modal.querySelector('.modal-backdrop').classList.remove('opacity-0');
+                modal.querySelector('.modal-content').classList.remove('scale-95');
+            }
+
+            function closeModal(modal) {
+                modal.querySelector('.modal-backdrop').classList.add('opacity-0');
+                modal.querySelector('.modal-content').classList.add('scale-95');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+
+            addBalanceForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const amount = parseFloat(balanceAmountInput.value);
+                if (isNaN(amount) || amount <= 0) {
+                    apiResponse.textContent = 'Por favor, introduce un monto válido para cargar.';
+                    return;
+                }
+                paymentAmountText.textContent = `$${amount.toFixed(2)}`;
+                openModal(paymentModal);
+            });
+
+            paymentForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                closeModal(paymentModal);
+                processBalanceLoad();
+                setTimeout(() => openModal(confirmationModal), 400);
+            });
+
+            cancelPaymentBtn.addEventListener('click', () => closeModal(paymentModal));
+            closeConfirmationBtn.addEventListener('click', () => closeModal(confirmationModal));
+
+            // --- Lógica de Navegación ---
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const pageId = item.dataset.page;
+                    
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+
+                    contentPages.forEach(page => {
+                        if (page.id === `page-${pageId}`) {
+                            page.classList.remove('hidden');
+                        } else {
+                            page.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            // --- Asignación de Eventos ---
+            apiKeyForm.addEventListener('submit', handleSaveApiKey);
+            orderForm.addEventListener('submit', handlePlaceOrder);
+            statusForm.addEventListener('submit', handleCheckStatus);
+            serviceSelect.addEventListener('change', updateTotalCost);
+            quantityInput.addEventListener('input', updateTotalCost);
+            serviceSearchInput.addEventListener('input', handleServiceSearch);
+            cheapestBtn.addEventListener('click', selectCheapestService);
+
+            // --- Carga Inicial ---
+            apiKeyInput.value = apiKey; 
+            getServices();
+            getBalance();
+        });
+    </script>
+</body>
+</html>
