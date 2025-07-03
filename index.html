@@ -123,7 +123,7 @@
                         <div class="bg-gray-800 p-6 rounded-xl">
                              <form id="order-form" class="space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-400 mb-2">Búsquedas Rápidas (clic para editar)</label>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">Búsquedas Rápidas (clic izq. para buscar, clic der. para editar)</label>
                                     <div id="quick-search-buttons" class="flex items-center gap-2">
                                         <!-- Los botones se generan con JS -->
                                     </div>
@@ -215,7 +215,27 @@
 
                 <!-- Página: Órdenes -->
                 <div id="page-ordenes" class="page-content hidden">
-                    <h2 class="text-3xl font-bold mb-6">Verificar Estado de Pedido</h2>
+                    <h2 class="text-3xl font-bold mb-6">Historial de Órdenes</h2>
+                    <div class="bg-gray-800 p-6 rounded-xl mb-8">
+                        <div class="max-h-[50vh] overflow-y-auto">
+                            <table class="w-full text-left">
+                                <thead class="sticky top-0 bg-gray-800">
+                                    <tr>
+                                        <th class="p-2 border-b border-gray-700">ID</th>
+                                        <th class="p-2 border-b border-gray-700">Fecha</th>
+                                        <th class="p-2 border-b border-gray-700">Enlace</th>
+                                        <th class="p-2 border-b border-gray-700">Costo</th>
+                                        <th class="p-2 border-b border-gray-700">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orders-table-body">
+                                    <!-- El historial de órdenes se cargará aquí -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <h2 class="text-3xl font-bold mb-6 mt-8">Verificar Estado de Pedido Específico</h2>
                     <div class="max-w-md bg-gray-800 p-6 rounded-xl">
                         <form id="status-form" class="space-y-4">
                             <div>
@@ -360,7 +380,7 @@
 
             // --- Almacén de datos ---
             let allServices = []; 
-            let quickSearchValues = ['171', '402', '623'];
+            let quickSearchValues = ['8142', '8069', '8072', '8074'];
             let editingQuickSearchIndex = null;
 
             // --- Elementos del DOM ---
@@ -385,6 +405,7 @@
             const addBalanceForm = document.getElementById('add-balance-form'); 
             const balanceAmountInput = document.getElementById('balance-amount');
             const servicesTableBody = document.getElementById('services-table-body');
+            const ordersTableBody = document.getElementById('orders-table-body');
             
             // --- Elementos de Carga (Spinners) ---
             const orderLoader = document.getElementById('order-loader');
@@ -439,7 +460,7 @@
                         throw new Error(result.error);
                     }
 
-                    if (data.action !== 'services') { 
+                    if (data.action !== 'services' && data.action !== 'orders') { 
                       apiResponse.textContent = JSON.stringify(result, null, 2);
                     }
                     return result;
@@ -529,6 +550,33 @@
                     servicesTableBody.innerHTML += row;
                 });
             }
+            
+            function populateOrdersTable(orders) {
+                ordersTableBody.innerHTML = '';
+                 if (!orders || !Array.isArray(orders) || orders.length === 0) {
+                    ordersTableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No se encontraron órdenes.</td></tr>';
+                    return;
+                }
+                orders.forEach(order => {
+                    const row = `
+                        <tr class="hover:bg-gray-700">
+                            <td class="p-2 border-b border-gray-700">${order.order}</td>
+                            <td class="p-2 border-b border-gray-700">${order.date}</td>
+                            <td class="p-2 border-b border-gray-700 truncate max-w-xs">${order.link}</td>
+                            <td class="p-2 border-b border-gray-700">${order.charge} ${order.currency}</td>
+                            <td class="p-2 border-b border-gray-700">${order.status}</td>
+                        </tr>
+                    `;
+                    ordersTableBody.innerHTML += row;
+                });
+            }
+
+            async function getOrderHistory() {
+                const data = { action: 'orders' };
+                const orders = await fetchApi(data);
+                populateOrdersTable(orders);
+            }
+
 
             function setExampleService() {
                 if (!allServices || allServices.length === 0) return;
@@ -782,6 +830,10 @@
                             page.classList.add('hidden');
                         }
                     });
+                    
+                    if(pageId === 'ordenes') {
+                        getOrderHistory();
+                    }
                 });
             });
 
