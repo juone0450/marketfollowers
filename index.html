@@ -38,6 +38,19 @@
         .api-error {
             border: 2px solid #ef4444 !important;
         }
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
@@ -87,7 +100,8 @@
             <div class="mt-auto">
                 <div class="bg-gray-700 p-3 rounded-lg">
                     <h3 class="text-sm font-semibold mb-2">Saldo Actual</h3>
-                    <div id="balance-display" class="text-xl font-bold text-green-400">--.--</div>
+                    <div id="balance-display" class="text-xl font-bold text-green-400">--.-- USD</div>
+                    <div id="balance-display-ars" class="text-sm font-bold text-cyan-400">--.-- ARS</div>
                 </div>
             </div>
         </aside>
@@ -96,8 +110,8 @@
         <main class="flex-1 p-8 overflow-y-auto bg-gray-900">
             <!-- Video Principal -->
             <div class="mb-8">
-                <div class="aspect-w-16 aspect-h-9 bg-black rounded-lg">
-                    <iframe class="w-full h-full rounded-lg" src="https://www.youtube.com/embed/uSTnyv9Ga_U?si=kzCul-p4-10daue7" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                <div class="video-container bg-black rounded-lg">
+                    <iframe src="https://www.youtube.com/embed/uSTnyv9Ga_U?si=kzCul-p4-10daue7" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                 </div>
             </div>
 
@@ -134,7 +148,8 @@
                                 
                                 <div class="mt-2 pt-4 border-t border-gray-700 text-right">
                                     <span class="text-sm font-medium text-gray-400">Total a gastar:</span>
-                                    <span id="total-cost" class="text-lg font-bold text-green-400">$0.00</span>
+                                    <div id="total-cost" class="text-lg font-bold text-green-400">$0.00 USD</div>
+                                    <div id="total-cost-ars" class="text-sm font-bold text-cyan-400">$0.00 ARS</div>
                                 </div>
 
                                 <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
@@ -179,7 +194,8 @@
                                     <tr>
                                         <th class="p-2 border-b border-gray-700">ID</th>
                                         <th class="p-2 border-b border-gray-700">Nombre</th>
-                                        <th class="p-2 border-b border-gray-700">Tarifa / 1k</th>
+                                        <th class="p-2 border-b border-gray-700">Tarifa / 1k (USD)</th>
+                                        <th class="p-2 border-b border-gray-700">Tarifa / 1k (ARS)</th>
                                         <th class="p-2 border-b border-gray-700">Min/Max</th>
                                     </tr>
                                 </thead>
@@ -210,14 +226,23 @@
 
                 <!-- Página: API -->
                 <div id="page-api" class="page-content hidden">
-                    <h2 class="text-3xl font-bold mb-6">Configuración de API</h2>
-                    <div class="max-w-md bg-gray-800 p-6 rounded-xl">
+                    <h2 class="text-3xl font-bold mb-6">Configuración</h2>
+                    <div class="max-w-md bg-gray-800 p-6 rounded-xl space-y-8">
                         <form id="api-key-form" class="space-y-4">
+                            <h3 class="text-xl font-bold text-gray-300">Clave de API</h3>
                             <div>
                                 <label for="api-key-input" class="block text-sm font-medium text-gray-400 mb-1">Tu API Key</label>
                                 <input type="password" id="api-key-input" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
                             </div>
                             <button type="submit" id="save-api-key-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Guardar API Key</button>
+                        </form>
+                        <form id="dolar-form" class="space-y-4 border-t border-gray-700 pt-8">
+                             <h3 class="text-xl font-bold text-gray-300">Moneda</h3>
+                            <div>
+                                <label for="dolar-input" class="block text-sm font-medium text-gray-400 mb-1">Valor de 1 Dólar en Pesos Argentinos (ARS)</label>
+                                <input type="number" id="dolar-input" step="any" placeholder="1050.50" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition">
+                            </div>
+                            <button type="submit" id="save-dolar-btn" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Guardar Valor Dólar</button>
                         </form>
                     </div>
                 </div>
@@ -300,8 +325,9 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- Configuración de la API ---
-            let apiKey = localStorage.getItem('marketFollowersApiKey') || '817eb753c98220d9c2c2251468340073';
+            // --- Configuración de la API y Moneda ---
+            let apiKey = localStorage.getItem('marketFollowersApiKey') || 'api-key-falsa-de-ejemplo';
+            let dolarBlue = parseFloat(localStorage.getItem('dolarBlueValue')) || 1050.0;
             const originalApiUrl = 'https://marketfollowers.com/api/v2';
             const proxyUrl = 'https://corsproxy.io/?';
             const apiUrl = proxyUrl + encodeURIComponent(originalApiUrl);
@@ -312,7 +338,10 @@
             // --- Elementos del DOM ---
             const apiKeyForm = document.getElementById('api-key-form');
             const apiKeyInput = document.getElementById('api-key-input');
+            const dolarForm = document.getElementById('dolar-form');
+            const dolarInput = document.getElementById('dolar-input');
             const balanceDisplay = document.getElementById('balance-display');
+            const balanceDisplayArs = document.getElementById('balance-display-ars');
             const serviceSearchInput = document.getElementById('service-search');
             const serviceSelect = document.getElementById('service');
             const orderForm = document.getElementById('order-form');
@@ -321,6 +350,7 @@
             const apiResponseContainer = document.getElementById('api-response-container');
             const quantityInput = document.getElementById('quantity');
             const totalCostDisplay = document.getElementById('total-cost');
+            const totalCostArs = document.getElementById('total-cost-ars');
             const cheapestBtn = document.getElementById('cheapest-btn');
             const linkInput = document.getElementById('link');
             const addBalanceForm = document.getElementById('add-balance-form'); 
@@ -396,17 +426,21 @@
             
             function updateTotalCost() {
                 const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
-                if (!selectedOption || !selectedOption.dataset.rate) {
-                    totalCostDisplay.textContent = '$0.00';
+                if (!selectedOption || !selectedOption.dataset.rate || !selectedOption.value) {
+                    totalCostDisplay.textContent = '$0.00 USD';
+                    totalCostArs.textContent = '$0.00 ARS';
                     return;
                 }
                 const rate = parseFloat(selectedOption.dataset.rate);
                 const quantity = parseInt(quantityInput.value, 10);
                 if (rate && quantity > 0) {
-                    const total = (rate / 1000) * quantity;
-                    totalCostDisplay.textContent = `$${total.toFixed(4)}`;
+                    const totalUSD = (rate / 1000) * quantity;
+                    const totalARS = totalUSD * dolarBlue;
+                    totalCostDisplay.textContent = `$${totalUSD.toFixed(4)} USD`;
+                    totalCostArs.textContent = `$${totalARS.toFixed(2)} ARS`;
                 } else {
-                    totalCostDisplay.textContent = '$0.00';
+                    totalCostDisplay.textContent = '$0.00 USD';
+                    totalCostArs.textContent = '$0.00 ARS';
                 }
             }
 
@@ -414,9 +448,13 @@
                 const data = { action: 'balance' };
                 const result = await fetchApi(data);
                 if (result && result.balance && result.currency) {
-                    balanceDisplay.textContent = `${result.balance} ${result.currency}`;
+                    const balanceUSD = parseFloat(result.balance);
+                    const balanceARS = balanceUSD * dolarBlue;
+                    balanceDisplay.textContent = `${balanceUSD.toFixed(4)} ${result.currency}`;
+                    balanceDisplayArs.textContent = `$${balanceARS.toFixed(2)} ARS`;
                 } else {
                     balanceDisplay.textContent = 'Error';
+                    balanceDisplayArs.textContent = 'Error';
                 }
             }
             
@@ -431,7 +469,7 @@
                 servicesToRender.forEach(service => {
                     const option = document.createElement('option');
                     option.value = service.service;
-                    option.textContent = `[${service.service}] ${service.name} - ${service.rate} ${service.currency || 'USD'}/1k`;
+                    option.textContent = `[${service.service}] ${service.name} - $${service.rate} USD/1k`;
                     option.dataset.rate = service.rate; 
                     serviceSelect.appendChild(option);
                 });
@@ -444,11 +482,14 @@
                     return;
                 }
                 services.forEach(service => {
+                    const rateUSD = parseFloat(service.rate);
+                    const rateARS = (rateUSD * dolarBlue).toFixed(2);
                     const row = `
                         <tr class="hover:bg-gray-700">
                             <td class="p-2 border-b border-gray-700">${service.service}</td>
                             <td class="p-2 border-b border-gray-700">${service.name}</td>
-                            <td class="p-2 border-b border-gray-700">${service.rate}</td>
+                            <td class="p-2 border-b border-gray-700">${rateUSD.toFixed(4)}</td>
+                            <td class="p-2 border-b border-gray-700">${rateARS}</td>
                             <td class="p-2 border-b border-gray-700">${service.min} / ${service.max}</td>
                         </tr>
                     `;
@@ -531,6 +572,7 @@
                 const newBalance = currentBalance + amountToAdd;
 
                 balanceDisplay.textContent = `${newBalance.toFixed(4)} ${currency}`;
+                balanceDisplayArs.textContent = `$${(newBalance * dolarBlue).toFixed(2)} ARS`;
                 
                 apiResponse.textContent = JSON.stringify({
                     "status": "OK (Simulación)",
@@ -597,6 +639,21 @@
                 }
             }
 
+            function handleSaveDolar(e) {
+                e.preventDefault();
+                const newValue = parseFloat(dolarInput.value);
+                if (!isNaN(newValue) && newValue > 0) {
+                    dolarBlue = newValue;
+                    localStorage.setItem('dolarBlueValue', newValue);
+                    apiResponse.textContent = `Valor del dólar guardado en ${newValue} ARS. Actualizando valores...`;
+                    getBalance();
+                    updateTotalCost();
+                    populateServicesTable(allServices);
+                } else {
+                    apiResponse.textContent = 'Por favor, introduce un valor de dólar válido.';
+                }
+            }
+
             // --- Lógica de Modales ---
             function openModal(modal) {
                 modal.classList.remove('hidden');
@@ -651,6 +708,7 @@
 
             // --- Asignación de Eventos ---
             apiKeyForm.addEventListener('submit', handleSaveApiKey);
+            dolarForm.addEventListener('submit', handleSaveDolar);
             orderForm.addEventListener('submit', handlePlaceOrder);
             statusForm.addEventListener('submit', handleCheckStatus);
             serviceSelect.addEventListener('change', updateTotalCost);
@@ -660,6 +718,7 @@
 
             // --- Carga Inicial ---
             apiKeyInput.value = apiKey; 
+            dolarInput.value = dolarBlue;
             getServices();
             getBalance();
         });
