@@ -123,6 +123,12 @@
                         <div class="bg-gray-800 p-6 rounded-xl">
                              <form id="order-form" class="space-y-4">
                                 <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">Búsquedas Rápidas (clic para editar)</label>
+                                    <div id="quick-search-buttons" class="flex items-center gap-2">
+                                        <!-- Los botones se generan con JS -->
+                                    </div>
+                                </div>
+                                <div>
                                     <label for="service-search" class="block text-sm font-medium text-gray-400 mb-1">Buscar Servicio</label>
                                     <div class="flex items-center gap-2">
                                         <input type="text" id="service-search" placeholder="Escribe para buscar (ej: 'Instagram')" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
@@ -270,7 +276,7 @@
 
     <!-- MODAL DE PAGO CON TARJETA -->
     <div id="payment-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
-        <div id="payment-modal-backdrop" class="absolute inset-0 bg-black bg-opacity-50 modal-backdrop"></div>
+        <div class="absolute inset-0 bg-black bg-opacity-50 modal-backdrop"></div>
         <div class="bg-gray-800 text-white rounded-xl shadow-2xl p-6 md:p-8 w-full max-w-md z-10 mx-4 modal-content transform scale-95">
             <h2 class="text-2xl font-bold mb-6">Detalles de Pago</h2>
             <form id="payment-form">
@@ -323,6 +329,26 @@
         </div>
     </div>
     
+    <!-- MODAL PARA EDITAR BOTÓN RÁPIDO -->
+    <div id="edit-quick-search-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50 modal-backdrop"></div>
+        <div class="bg-gray-800 text-white rounded-xl shadow-2xl p-6 md:p-8 w-full max-w-sm z-10 mx-4 modal-content transform scale-95">
+            <h2 class="text-2xl font-bold mb-6">Editar Botón Rápido</h2>
+            <form id="edit-quick-search-form">
+                <div class="space-y-4">
+                    <div>
+                        <label for="quick-search-id-input" class="block text-sm font-medium text-gray-400">Nuevo ID de Servicio</label>
+                        <input type="text" id="quick-search-id-input" placeholder="171" class="mt-1 w-full p-2 border border-gray-600 bg-gray-700 rounded-lg" required>
+                    </div>
+                </div>
+                <div class="mt-8 flex justify-end gap-4">
+                    <button type="button" id="cancel-edit-quick-search-btn" class="px-4 py-2 bg-gray-600 rounded-lg hover:bg-gray-500">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- Configuración de la API y Moneda ---
@@ -334,6 +360,8 @@
 
             // --- Almacén de datos ---
             let allServices = []; 
+            let quickSearchValues = ['171', '402', '623'];
+            let editingQuickSearchIndex = null;
 
             // --- Elementos del DOM ---
             const apiKeyForm = document.getElementById('api-key-form');
@@ -342,6 +370,7 @@
             const dolarInput = document.getElementById('dolar-input');
             const balanceDisplay = document.getElementById('balance-display');
             const balanceDisplayArs = document.getElementById('balance-display-ars');
+            const quickSearchButtonsContainer = document.getElementById('quick-search-buttons');
             const serviceSearchInput = document.getElementById('service-search');
             const serviceSelect = document.getElementById('service');
             const orderForm = document.getElementById('order-form');
@@ -368,6 +397,10 @@
             const paymentAmountText = document.getElementById('payment-amount-text');
             const confirmationModal = document.getElementById('confirmation-modal');
             const closeConfirmationBtn = document.getElementById('close-confirmation-btn');
+            const editQuickSearchModal = document.getElementById('edit-quick-search-modal');
+            const editQuickSearchForm = document.getElementById('edit-quick-search-form');
+            const quickSearchIdInput = document.getElementById('quick-search-id-input');
+            const cancelEditQuickSearchBtn = document.getElementById('cancel-edit-quick-search-btn');
             
             // --- Navegación ---
             const navItems = document.querySelectorAll('.nav-item');
@@ -478,7 +511,7 @@
             function populateServicesTable(services) {
                 servicesTableBody.innerHTML = '';
                 if (!services || !Array.isArray(services)) {
-                    servicesTableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">No se pudieron cargar los servicios.</td></tr>';
+                    servicesTableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No se pudieron cargar los servicios.</td></tr>';
                     return;
                 }
                 services.forEach(service => {
@@ -654,6 +687,39 @@
                 }
             }
 
+            // --- Lógica de Búsqueda Rápida ---
+            function renderQuickSearchButtons() {
+                quickSearchButtonsContainer.innerHTML = '';
+                quickSearchValues.forEach((value, index) => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.textContent = value;
+                    button.className = 'bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition';
+                    
+                    button.addEventListener('click', () => {
+                        serviceSearchInput.value = value;
+                        handleServiceSearch();
+                    });
+
+                    button.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        editingQuickSearchIndex = index;
+                        quickSearchIdInput.value = value;
+                        openModal(editQuickSearchModal);
+                    });
+
+                    quickSearchButtonsContainer.appendChild(button);
+                });
+            }
+
+            function loadQuickSearchValues() {
+                const savedValues = localStorage.getItem('quickSearchValues');
+                if (savedValues) {
+                    quickSearchValues = JSON.parse(savedValues);
+                }
+                renderQuickSearchButtons();
+            }
+
             // --- Lógica de Modales ---
             function openModal(modal) {
                 modal.classList.remove('hidden');
@@ -685,8 +751,21 @@
                 setTimeout(() => openModal(confirmationModal), 400);
             });
 
+            editQuickSearchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newId = quickSearchIdInput.value.trim();
+                if (newId && !isNaN(newId) && editingQuickSearchIndex !== null) {
+                    quickSearchValues[editingQuickSearchIndex] = newId;
+                    localStorage.setItem('quickSearchValues', JSON.stringify(quickSearchValues));
+                    renderQuickSearchButtons();
+                    closeModal(editQuickSearchModal);
+                    editingQuickSearchIndex = null;
+                }
+            });
+
             cancelPaymentBtn.addEventListener('click', () => closeModal(paymentModal));
             closeConfirmationBtn.addEventListener('click', () => closeModal(confirmationModal));
+            cancelEditQuickSearchBtn.addEventListener('click', () => closeModal(editQuickSearchModal));
 
             // --- Lógica de Navegación ---
             navItems.forEach(item => {
@@ -719,6 +798,7 @@
             // --- Carga Inicial ---
             apiKeyInput.value = apiKey; 
             dolarInput.value = dolarBlue;
+            loadQuickSearchValues();
             getServices();
             getBalance();
         });
